@@ -2,11 +2,9 @@ Please view ERD via below Confluence URL:
 https://chaeyucy.atlassian.net/wiki/external/MGNjNjQ0NTY3YTI5NDRkYThjOGEzYzMyMmFhY2YyZDM
 
 ### **Conceptual relationships between entities:**
-
 Website → User → Chatbot conversation → Message
 
 ### **Data Model Designed is based on below condition/assumption:**
-
 1. A single user can start the chatbot conversation with/without signing into existing website
 2. User is allowed to sign in to existing website in the middle of chatbot conversation
 3. If a user open the same website in a new tab within the same browser, it will be treated as ongoing chatbot conversation. While, if a user open the same website via another different browser, it will be considered as a new chatbot conversation.
@@ -17,7 +15,6 @@ Website → User → Chatbot conversation → Message
 ### Data Model - Tables & Relationships & Index
 
 ### **[chatbot_conversation]:**
-
 **Description:** When a user starts talking to the chatbot, the conversation kicks off and one record is created in this table. If a single user initiates chatbot on the same website via 2 different browsers, they are treated as 2 chatbot conversations.
 
 **Column:**
