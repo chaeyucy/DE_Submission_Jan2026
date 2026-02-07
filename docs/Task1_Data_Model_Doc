@@ -1,2 +1,175 @@
-If the uploaded PDF is not displayed correctly, please access below Confluence URL:
+Please view ERD via below Confluence URL:
 https://chaeyucy.atlassian.net/wiki/external/MGNjNjQ0NTY3YTI5NDRkYThjOGEzYzMyMmFhY2YyZDM
+
+### **Conceptual relationships between entities:**
+
+Website → User → Chatbot conversation → Message
+
+### **Data Model Designed is based on below condition/assumption:**
+
+1. A single user can start the chatbot conversation with/without signing into existing website
+2. User is allowed to sign in to existing website in the middle of chatbot conversation
+3. If a user open the same website in a new tab within the same browser, it will be treated as ongoing chatbot conversation. While, if a user open the same website via another different browser, it will be considered as a new chatbot conversation.
+4. Once a conversation ends, user intends to leave the chat or abandon in the process of chatbot response generation, user is invited to feedback by rating and leave comment*(Optionally)*.
+5. User may use different languages within a single conversation, but only one language used in free-text feedback.
+6. Phone number is treated as mandatory PII for existing website account creation.
+
+### Data Model - Tables & Relationships & Index
+
+### **[chatbot_conversation]:**
+
+**Description:** When a user starts talking to the chatbot, the conversation kicks off and one record is created in this table. If a single user initiates chatbot on the same website via 2 different browsers, they are treated as 2 chatbot conversations.
+
+**Column:**
+- conversation_id UUID NOT NULL **(PK)**
+- website_id bigint NOT NULL **(FK → [website].website_id)**
+- chatbot_user_id bigint NOT NULL **(FK → [chatbot_user].chatbot_user_id)**
+- entry_page_url nvarchar(max) NOT NULL
+- entry_page_type varchar(50) NULL (e.g., “Homepage”, “Q&A”, etc.)
+- channel varchar(10) NOT NULL (e.g., “Web”)
+- os varchar(50) NOT NULL (e.g., “Mac OS X”, “Windows 11”, etc.)
+- browser varchar(50) NOT NULL (e.g., “MS Edge”, “Google Chrome”, etc.)
+- device_type varchar(10) NOT NULL (e.g., “Mobile”, “PC”, etc.)
+- primary_intent varchar(500) NULL
+- intent_confidence float NULL
+- status varchar(10) NOT NULL (e.g., active, ended, abandoned, error, etc.)
+- started_at timestamp NOT NULL
+- ended_at timestamp NULL
+
+**Index:**
+1. **INDEX(chatbot_user_id, started_at desc)
+To improve past data fetching for a specific chatbot user**
+2. **INDEX(website_id, status, started_at desc)
+To improve monitoring on a specific website**
+
+### [message]
+**Description:** one chatbot conversation is mapped with many messages sent by bot or user.
+**Consideration:** Message timestamp from both user and bot should be captured for response time analysis. Both raw and translated message content should be stored, while translated content field accepts nullable value since machine translation may fail sometimes.
+
+**Column:**
+- message_id bigint NOT NULL **PK**
+- conversation_id UUID NOT NULL **(FK → [chatbot_conversation].conversation_id)**
+- message_sequence int NOT NULL
+- sent_at timestamp NOT NULL
+- role varchar(5) NOT NULL (e.g., bot, user)
+- content_type varchar(10) NOT NULL (e.g., image, text)
+- content_raw nvarchar(MAX) NOT NULL
+- content_translated nvarchar(MAX) NULL
+- language_id int NOT NULL **(FK → [language].language_id)**
+- response_latency_ms int NULL
+
+**Index:**
+1. **UNIQUE (conversation_id, message_sequence)
+To ensure correct ordering**
+2. **INDEX(conversation_id, sent_at) 
+To improve data retrieval in time order**
+3. **Partition by sent_at
+To improve where clause data retrival and archiving, reduce I/O**
+
+### [message_nlp]
+**Description:** NLP record per message per version, allowing for reprocessing with different NLP versions.
+
+**Columns:**
+- message_id bigint NOT NULL **(Composite PK, FK → [message].message_id)**
+- nlp_version varchar(50) NOT NULL **(Composite PK)**
+- processed_at timestamp NOT NULL
+- processor varchar(50) NOT NULL
+- status varchar(20) NOT NULL (e.g., success, failed, partial, etc.)
+- error_code varchar(50) NULL
+- error_detail varchar(500) NULL
+- sentiment_score float NULL
+- intent varchar(100) NULL
+- intent_confidence float NULL
+- entities JSON NULL
+
+**Index:**
+1. **(nlp_version, processed_at desc) for monitoring**
+
+### [conversation_feedback]
+**Description:** It stores conversation-level feedback in original language by user. 1 conversation has 1 feedback record.
+
+**Column:**
+- feedback_id bigint NOT NULL **PK**
+- conversation_id UUID NOT NULL **(FK → [chatbot_conversation].conversation_id)**
+- rating_score TINYINT NOT NULL
+- feedback_raw nvarchar(MAX) NULL
+- language_id int NULL
+- created_at timestamp NOT NULL
+
+**Index:**
+1. **UNIQUE(conversation_id) 
+To ensure conversation-level feedback and 1-1 relationship**
+2. **Check(feedback_raw is NULL or language_id is not NULL)
+To ensure whenever free-text feedback collected from user, there must be language.**
+
+### [translated_feedback]
+**Description:** It stores translated user feedback per conversation, allowing re-translation using different translator model.
+
+**Columns:**
+- feedback_id bigint NOT NULL **(Composite PK, FK → [conversation_feedback].feedback_id)**
+- translation_version varchar(50) **(Composite PK)**
+- translated_feedback nvarchar(MAX) NOT NULL
+- translated_at timestamp NOT NULL
+- status varchar(20) NOT NULL (e.g., success, error, etc.)
+- error_code varchar(50) NULL
+
+### [chatbot_user]
+**Description:** One record per browser profile on a website. A user starting chatbots on the same website via 2 different browsers within the same device are treated as 2 different chatbot users.
+
+**Column:**
+- chatbot_user_id bigint NOT NULL **PK**
+- website_id bigint NOT NULL (FK → [website].website_id)
+- anonymous_id varchar(36) NOT NULL
+- first_active_at timestamp NOT NULL
+- last_active_at timestamp NOT NULL
+
+**Index:**
+1. **UNIQUE (website_id, anonymous_id)
+To strengthen data quality check, one chatbot_user per device per website, and 2 browsers on the same device are treated as 2 different chatbot users.**
+
+### [website_user]
+**Description:** existing website user account
+
+**Column:**
+- website_user_id bigint NOT NULL **PK**
+- website_id bigint NOT NULL **(FK → [website].website_id)**
+- preferred_language int NULL **(FK→ [language].language_id)**
+- hashed_phone varchar(128) NOT NULL
+- hash_version varchar(50) NOT NULL
+- active_flag boolean NOT NULL
+- active_from timestamp NOT NULL
+- active_end timestamp NOT NULL
+
+### [user_id_mapping]
+**Description:** User is allowed to sign into existing website account at any time, even in the middle of a chatbot conversation. This table records when user signs in.
+
+**Column:**
+- chatbot_user_id bigint NOT NULL **(Composite Primary Key; FK → [chatbot_user].chatbot_user_id)**
+- website_user_id bigint NOT NULL **(Composite Primary Key; FK → [website_user].website_user_id)**
+- linked_at timestamp NOT NULL **(Composite Primary Key)**
+- unlinked_at timestamp NULL
+
+**Index:**
+1. **Composite PK (chatbot_user_id, website_user_id, linked_at)
+A user can sign into existing website anytime, even in the middle of chatbot conversation**
+2. **UNIQUE (chatbot_user_id) WHERE unlinked_at IS NULL
+Quality check, ensure a single user can only log into a single unique existing account**
+3.  **Check (unlinked_at >= linked_at)**
+
+### [website]
+**Column:**
+- website_id bigint NOT NULL **PK**
+- website_name varchar(100) NOT NULL
+- domain varchar(500) NOT NULL
+- category varchar(50) NOT NULL
+- active_flag boolean NOT NULL
+- active_from timestamp NOT NULL
+- active_end timestamp NULL
+
+### [language]
+**Column:**
+- language_id int NOT NULL **PK**
+- language varchar(50) NOT NULL
+- active_flag boolean NOT NULL
+- active_start timestamp NOT NULL
+- active_end timestamp NULL
