@@ -1,0 +1,46 @@
+Please access below Confluence document for better display.
+https://chaeyucy.atlassian.net/wiki/external/YjAzZGYzOGQxYjIzNDgxMWJlZGU2ODVhZTg3NDk0ZWQ
+
+### Metric 1 — A pair of weighted scores covering latency + error/fallback rate, e.g., WeightedScore = 0.5*LatencyScore + 0.5*QualityGate
+
+## Rationale: Users typically enjoy instant problem resolution and prioritize speed especially in customer service scenarios. If delay is too long and affects user satisfaction, user may abandon in midstream and choose to reach out to live agent. 
+However, chatbot may immediately reply "I don't understand" or trigger a generic error message, so a fast chatbot with high fallback is still unsuccessful.
+
+## Data Fields needed:
+1. “response_latency_ms” is already defined at message level, for computing “p95_bot_latency_ms”, ‘avg_bot_latency_ms’, etc.
+2. A label indicating if fallback/error replies by chatbot should be added at message level, for calculation of “fallback_rate”, ‘error_rate’.
+
+## Validation:
+1. Use 95th/99th percentile instead of average to evaluate chatbot response latency, avoiding data skew by outliers but revealing worst case experience for most users.
+2. Regularly check error reply label to verify the tagging is correct.
+3. Exclude test traffic and bots/spam
+
+
+### Metrics 2 — Containment Rate (e.g., % conversations with “escalated_to_agent” = 0 and “status” = “ended”)
+
+## Rational: Tracks the percentage of users who start a conversation and get a resolution solely within the chatbot, without escalating to a live agent or being routed elsewhere. 
+The more self-sufficient your chatbot, the more it reduces operational costs.
+
+## Data Fields needed:
+1. “escalated_to_agent” boolean
+2. “escalated_at” timestamp
+
+## Validation:
+1. Cross-system reconciliation is needed to validate trustworthiness. Check if any chats/tickets created by same user within a short timeframe after chatbot conversation. 
+User may not escalate to a live agent within the same conversation in chatbot, instead user may contact hotline or submit a ticket to customer service. 
+If user is not routed to a live agent and chatbot says it's solving issues, but human agents are still overloaded, the metric is likely not trustworthy.
+2. Exclude test traffic and bots/spam
+
+
+### Metrics 3 — User Rating + Retention Rate (e.g., D7 retention)
+
+## Rationale: Direct feedback shows overall satisfaction of user, but usually only a subset of users leaves feedback. And even lots of users leave feedback only when they tend to complain. So Return user rate proves repeatable and positive user experience.
+
+## Data Fields needed:
+1. “rating_score” and “created_at” are both defined already at conversation level.
+2. If users don’t sign into website account, “hashed_ip”, “browser fingerprint”, ”visit_count” are needed in table [chatbot_user] to detect return users. ”website_id”, “anonymous_id”, “first_active_at” and ”last_active_at” are defined already.
+3. Users signing into website account can be linked by bridging mapping.
+
+## Validation:
+1. A bot that’s opened and closed by accident should be excluded, count of user message needs to be tracked.
+2. Exclude test traffic and bots/spam
