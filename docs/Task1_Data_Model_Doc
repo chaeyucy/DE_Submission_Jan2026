@@ -1,16 +1,18 @@
-Please view ERD via below Confluence URL:
-https://chaeyucy.atlassian.net/wiki/external/MGNjNjQ0NTY3YTI5NDRkYThjOGEzYzMyMmFhY2YyZDM
+Please access below Confluence document for better display:
+Data Model : https://chaeyucy.atlassian.net/wiki/external/NTg5NmIxODYxYmM0NDE1ZjhhNjYwNDA2ZjM5YmMyOTI
+ERD : https://chaeyucy.atlassian.net/wiki/external/MGNjNjQ0NTY3YTI5NDRkYThjOGEzYzMyMmFhY2YyZDM
 
 ### **Conceptual relationships between entities:**
 Website → User → Chatbot conversation → Message
 
-### **Data Model Designed is based on below condition/assumption:**
-1. A single user can start the chatbot conversation with/without signing into existing website
-2. User is allowed to sign in to existing website in the middle of chatbot conversation
-3. If a user open the same website in a new tab within the same browser, it will be treated as ongoing chatbot conversation. While, if a user open the same website via another different browser, it will be considered as a new chatbot conversation.
-4. Once a conversation ends, user intends to leave the chat or abandon in the process of chatbot response generation, user is invited to feedback by rating and leave comment*(Optionally)*.
-5. User may use different languages within a single conversation, but only one language used in free-text feedback.
-6. Phone number is treated as mandatory PII for existing website account creation.
+### **Data Model is based on below assumption/rationale:**
+1. A single user can start the chatbot conversation with/without signing into existing website, and is allowed to sign in at any time even in the middle of chatbot conversation. To track late login, table [chatbot_user] and [website_user] are linked by bridging table.
+2. If a user open the same website in a new tab within the same browser, it will be treated as ongoing chatbot conversation. While, if a user open the same website via another different browser, it will be considered as a new chatbot conversation. 
+To avoid table exploding, separate entities [chatbot_user], [conversation], [message] are defined. Meanwhile, performance of message translation/interpretation and response by bot varies depending on NLP/ML models. To improve versioning and future model analysis, a separate [message_nlp] table is defined.  
+3. Once a conversation ends, user intends to leave the chat or abandon in the process of chatbot response generation, user is invited to leave feedback by rating(1 feedback must have 1 rating) or comment(Optional). Feedback interpretation depends on translation model used, a separate entity [translated_feedback] is defined for future re-play.
+4. User may use different languages within a single conversation, but only one language used in free-text feedback. So language info is stored at message-level instead of conversation-level. 
+5. Phone number is treated as mandatory PII for existing website account creation.
+6. Entities [language]/[website] are normalized from fact table to improve integrity with SCD type 2.
 
 ### Data Model - Tables & Relationships & Index
 
