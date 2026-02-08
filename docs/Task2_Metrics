@@ -1,5 +1,7 @@
 Please access below Confluence document for better display.
-https://chaeyucy.atlassian.net/wiki/external/YjAzZGYzOGQxYjIzNDgxMWJlZGU2ODVhZTg3NDk0ZWQ
+
+Metrics : https://chaeyucy.atlassian.net/wiki/external/YjAzZGYzOGQxYjIzNDgxMWJlZGU2ODVhZTg3NDk0ZWQ
+ERD for chatbot session : https://chaeyucy.atlassian.net/wiki/external/NGI5YzEyY2MyMWVjNDgxY2I2N2M2NDE5ZDFmOGM3Njc
 
 ### Metric 1 — A pair of weighted scores covering latency + error/fallback rate, e.g., WeightedScore = 0.5*LatencyScore + 0.5*QualityGate
 
