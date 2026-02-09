@@ -28,8 +28,9 @@ services:
       - ./scripts:/scripts:ro
     entrypoint: ["/bin/bash", "-lc"]
     command: >
-      "/opt/mssql-tools18/bin/sqlcmd -C -S sqlserver -U sa -P 'P@ssw0rd!' -i /task1_scripts/init_db.sql"
+      "/opt/mssql-tools18/bin/sqlcmd -C -S sqlserver -U sa -P 'P@ssw0rd!' -i /scripts/init_db.sql"
     restart: "no"
 
 volumes:
   sqlserver_data:
+
