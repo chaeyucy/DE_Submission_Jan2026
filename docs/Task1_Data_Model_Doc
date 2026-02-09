@@ -13,6 +13,7 @@ To avoid table exploding, separate entities [chatbot_user], [conversation], [mes
 4. User may use different languages within a single conversation, but only one language used in free-text feedback. So language info is stored at message-level instead of conversation-level. 
 5. Phone number is treated as mandatory PII for existing website account creation.
 6. Entities [language]/[website] are normalized from fact table to improve integrity with SCD type 2.
+7. Assume that there are other log tables (e.g., failure logs) and partition tables (ETL jobs fail loading data into gold layer tables) to accommodate bad data. Each gold layer table has attribute 'created_at', 'created_by', 'updated_at' and 'updated_by' for idempotency and history tracking.
 
 ### Data Model - Tables & Relationships & Index
 
