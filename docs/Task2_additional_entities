@@ -1,0 +1,87 @@
+To support the 3 Metrics I proposed, there are additional tables needed.
+
+### [chatbot_session]
+## Rational: Each conversation corresponds to one record of chatbot session consolidating figures for analysis.
+## Columns:
+    session_id                 UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
+    conversation_id            UNIQUEIDENTIFIER NOT NULL,
+    website_id                 BIGINT           NOT NULL,
+    chatbot_user_id            BIGINT           NOT NULL,
+    session_start_at           DATETIME2(3)     NOT NULL,
+    session_end_at             DATETIME2(3)     NULL,
+    duration_seconds           INT              NULL,
+    -- Conversation state
+    status                     VARCHAR(10)      NOT NULL,  -- ended/abandoned/error/active etc.
+    traffic_type               VARCHAR(10)      NOT NULL CONSTRAINT DF_chatbot_session_traffic DEFAULT 'prod', -- prod/test/bot/internal
+    -- Metric 2: escalation
+    escalated_to_agent         BIT              NOT NULL CONSTRAINT DF_chatbot_session_escalated DEFAULT 0,
+    escalated_at               DATETIME2(3)     NULL,
+    escalation_channel         VARCHAR(20)      NULL, -- live_chat/ticket/hotline/other
+    -- Metric 3: feedback
+    has_feedback               BIT              NOT NULL CONSTRAINT DF_chatbot_session_has_feedback DEFAULT 0,
+    rating_score               TINYINT          NULL,
+    -- Message counts -- Exclude “non-engaged” conversations
+    user_message_count         INT              NOT NULL CONSTRAINT DF_chatbot_session_user_cnt DEFAULT 0,
+    bot_message_count          INT              NOT NULL CONSTRAINT DF_chatbot_session_bot_cnt DEFAULT 0,
+    -- Metric 1: fallback/error counts at session level
+    bot_fallback_count         INT              NOT NULL CONSTRAINT DF_chatbot_session_fb_cnt DEFAULT 0,
+    bot_error_count            INT              NOT NULL CONSTRAINT DF_chatbot_session_err_cnt DEFAULT 0,
+    -- Metric 1: latency rollups at session level
+    bot_latency_avg_ms         FLOAT            NULL,
+    bot_latency_p95_ms         INT              NULL,
+    bot_latency_p99_ms         INT              NULL,
+    first_bot_response_ms      INT              NULL,
+    -- bot/internal test/spam traffic detection
+    ip_address                 VARBINARY(32)    NOT NULL,
+    created_at     DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
+    updated_at     DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
+    created_by     VARCHAR(50)  NOT NULL default 'CW',
+    updated_by     VARCHAR(50)  NOT NULL default 'CW',
+## Index:
+     CONSTRAINT PK_chatbot_session PRIMARY KEY(session_id),
+	   CONSTRAINT UQ_chatbot_session_conversation UNIQUE (conversation_id),
+     CONSTRAINT FK_chatbot_session_conversation
+     FOREIGN KEY (conversation_id) REFERENCES dbo.chatbot_conversation(conversation_id),
+     CONSTRAINT FK_chatbot_session_website
+     FOREIGN KEY (website_id) REFERENCES dbo.website(website_id),
+     CONSTRAINT FK_chatbot_session_chatbot_user
+     FOREIGN KEY (chatbot_user_id) REFERENCES dbo.chatbot_user(chatbot_user_id),
+     CONSTRAINT CK_chatbot_session_escalation_time
+     CHECK (escalated_to_agent = 0 OR escalated_at IS NOT NULL)
+
+
+### [message_bot_label]
+## Rational: To support fallback/error count in aggregated session table, reply by bot is labeled as 'normal','fallback','error' or 'handoff_prompt', allowing for re-play and audit.
+## Columns:
+  message_id     BIGINT       NOT NULL,
+  label_version  VARCHAR(50)  NOT NULL,
+  labeled_at     DATETIME2(3) NOT NULL CONSTRAINT DF_msg_label DEFAULT SYSUTCDATETIME(),
+  reply_type     VARCHAR(20)  NOT NULL,
+  label_source   VARCHAR(20)  NOT NULL,
+  is_current     BIT          NOT NULL CONSTRAINT DF_lbl_is_current DEFAULT 0,
+  notes          VARCHAR(200) NULL,
+  created_at     DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
+  updated_at     DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
+  created_by     VARCHAR(50)  NOT NULL default 'CW',
+  updated_by     VARCHAR(50)  NOT NULL default 'CW',
+## Index:
+  CONSTRAINT PK_message_bot_label PRIMARY KEY (message_id, label_version),
+  CONSTRAINT FK_lbl_msg FOREIGN KEY (message_id) REFERENCES dbo.[message](message_id),
+  CONSTRAINT CK_lbl_type CHECK (reply_type IN ('normal','fallback','error','handoff_prompt'))
+
+
+### [session_escalation]
+## Rational: If user is routed to hotline, livechat or tickting system, the escalation will be recorded in this table. 
+## Columns:
+    escalation_id        BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_session_escalation PRIMARY KEY,
+    session_id           UNIQUEIDENTIFIER NOT NULL,
+    escalated_at         DATETIME2(3)     NOT NULL DEFAULT SYSUTCDATETIME(),
+    escalation_channel   VARCHAR(20)      NOT NULL, -- live_chat/ticket/hotline/other
+    escalation_reason    VARCHAR(100)     NULL,
+	  created_at     DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
+    updated_at     DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
+    created_by     VARCHAR(50)  NOT NULL default 'CW',
+    updated_by     VARCHAR(50)  NOT NULL default 'CW',
+## Index:
+    CONSTRAINT FK_session_escalation_session
+    FOREIGN KEY (session_id) REFERENCES dbo.chatbot_session(session_id)
