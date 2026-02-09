@@ -1,0 +1,3 @@
+scripts/
+│   ├── staging.sql                 # DDL creating staging layer to accommodate data before arriving at gold layer with light constraints but basic integrity enforcement.
+│   └── upsert_from_stag_to_gold.sql     # upsert logic that inserts new records from staging layer to gold layer, while update records at gold layer if existing. (Assume there are other metadata, log, partition tables to accomodate bad data.)
