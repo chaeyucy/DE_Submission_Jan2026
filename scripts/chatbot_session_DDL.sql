@@ -67,7 +67,7 @@ CREATE TABLE dbo.chatbot_session (
     first_bot_response_ms      INT              NULL,
 
     -- bot/internal test/spam traffic detection
-    ip_address                    VARBINARY(32)    NULL,
+    ip_address     VARBINARY(32)    NOT NULL,
 
     created_at     DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
     updated_at     DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
@@ -136,3 +136,4 @@ GO
 CREATE INDEX IX_session_escalation_session_time
 ON dbo.session_escalation(session_id, escalated_at DESC);
 GO
+
