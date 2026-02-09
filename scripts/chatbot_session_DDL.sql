@@ -52,7 +52,7 @@ CREATE TABLE dbo.chatbot_session (
     has_feedback               BIT              NOT NULL CONSTRAINT DF_chatbot_session_has_feedback DEFAULT 0,
     rating_score               TINYINT          NULL,
 
-    -- Message counts -- Exclude ìnon-engagedî conversations
+    -- Message counts -- Exclude ‚Äúnon-engaged‚Äù conversations
     user_message_count         INT              NOT NULL CONSTRAINT DF_chatbot_session_user_cnt DEFAULT 0,
     bot_message_count          INT              NOT NULL CONSTRAINT DF_chatbot_session_bot_cnt DEFAULT 0,
 
