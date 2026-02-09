@@ -12,14 +12,13 @@ To avoid table exploding, separate entities [chatbot_user], [conversation], [mes
 3. Once a conversation ends, user intends to leave the chat or abandon in the process of chatbot response generation, user is invited to leave feedback by rating(1 feedback must have 1 rating) or comment(Optional). Feedback interpretation depends on translation model used, a separate entity [translated_feedback] is defined for future re-play.
 4. User may use different languages within a single conversation, but only one language used in free-text feedback. So language info is stored at message-level instead of conversation-level. 
 5. Phone number is treated as mandatory PII for existing website account creation.
-6. Entities [language]/[website] are normalized from fact table to improve integrity with SCD type 2.
-7. Assume that there are other log tables (e.g., failure logs) and partition tables (ETL jobs fail loading data into gold layer tables) to accommodate bad data. Each gold layer table has attribute 'created_at', 'created_by', 'updated_at' and 'updated_by' for idempotency and history tracking.
+6. Entities [language]/[website] are normalized to improve integrity with SCD type 2.
+7. Assume that there are other metadata and log tables (e.g., ETL job execution logs, failure logs) and partition tables (ETL jobs fail transformation/loading data into gold layer tables) to accommodate bad data. Each gold layer table has attribute 'created_at', 'created_by', 'updated_at' and 'updated_by' for idempotency and history tracking.
 
 ### Data Model - Tables & Relationships & Index
 
 ### **[chatbot_conversation]:**
 **Description:** When a user starts talking to the chatbot, the conversation kicks off and one record is created in this table. If a single user initiates chatbot on the same website via 2 different browsers, they are treated as 2 chatbot conversations.
-
 **Column:**
 - conversation_id UUID NOT NULL **(PK)**
 - website_id bigint NOT NULL **(FK → [website].website_id)**
@@ -39,18 +38,16 @@ To avoid table exploding, separate entities [chatbot_user], [conversation], [mes
 - created_by varchar(50) NOT NULL
 - updated_at timestamp NOT NULL
 - updated_by varchar(50) NOT NULL
-
-
 **Index:**
 1. **INDEX(chatbot_user_id, started_at desc)
 To improve past data fetching for a specific chatbot user**
 2. **INDEX(website_id, status, started_at desc)
 To improve monitoring on a specific website**
 
+
 ### [message]
 **Description:** one chatbot conversation is mapped with many messages sent by bot or user.
 **Consideration:** Message timestamp from both user and bot should be captured for response time analysis. Both raw and translated message content should be stored, while translated content field accepts nullable value since machine translation may fail sometimes.
-
 **Column:**
 - message_id bigint NOT NULL **PK**
 - conversation_id UUID NOT NULL **(FK → [chatbot_conversation].conversation_id)**
@@ -66,7 +63,6 @@ To improve monitoring on a specific website**
 - created_by varchar(50) NOT NULL
 - updated_at timestamp NOT NULL
 - updated_by varchar(50) NOT NULL
-
 **Index:**
 1. **UNIQUE (conversation_id, message_sequence)
 To ensure correct ordering**
@@ -75,9 +71,9 @@ To improve data retrieval in time order**
 3. **Partition by sent_at
 To improve where clause data retrival and archiving, reduce I/O**
 
+
 ### [message_nlp]
 **Description:** NLP record per message per version, allowing for reprocessing with different NLP versions.
-
 **Columns:**
 - message_id bigint NOT NULL **(Composite PK, FK → [message].message_id)**
 - nlp_version varchar(50) NOT NULL **(Composite PK)**
@@ -94,13 +90,12 @@ To improve where clause data retrival and archiving, reduce I/O**
 - created_by varchar(50) NOT NULL
 - updated_at timestamp NOT NULL
 - updated_by varchar(50) NOT NULL
-
 **Index:**
 1. **(nlp_version, processed_at desc) for monitoring**
 
+
 ### [conversation_feedback]
 **Description:** It stores conversation-level feedback in original language by user. 1 conversation has 1 feedback record.
-
 **Column:**
 - feedback_id bigint NOT NULL **PK**
 - conversation_id UUID NOT NULL **(FK → [chatbot_conversation].conversation_id)**
@@ -112,16 +107,15 @@ To improve where clause data retrival and archiving, reduce I/O**
 - created_by varchar(50) NOT NULL
 - updated_at timestamp NOT NULL
 - updated_by varchar(50) NOT NULL
-
 **Index:**
 1. **UNIQUE(conversation_id) 
 To ensure conversation-level feedback and 1-1 relationship**
 2. **Check(feedback_raw is NULL or language_id is not NULL)
 To ensure whenever free-text feedback collected from user, there must be language.**
 
+
 ### [translated_feedback]
 **Description:** It stores translated user feedback per conversation, allowing re-translation using different translator model.
-
 **Columns:**
 - feedback_id bigint NOT NULL **(Composite PK, FK → [conversation_feedback].feedback_id)**
 - translation_version varchar(50) **(Composite PK)**
@@ -134,9 +128,9 @@ To ensure whenever free-text feedback collected from user, there must be languag
 - updated_at timestamp NOT NULL
 - updated_by varchar(50) NOT NULL
 
+
 ### [chatbot_user]
 **Description:** One record per browser profile on a website. A user starting chatbots on the same website via 2 different browsers within the same device are treated as 2 different chatbot users.
-
 **Column:**
 - chatbot_user_id bigint NOT NULL **PK**
 - website_id bigint NOT NULL (FK → [website].website_id)
@@ -148,14 +142,13 @@ To ensure whenever free-text feedback collected from user, there must be languag
 - created_by varchar(50) NOT NULL
 - updated_at timestamp NOT NULL
 - updated_by varchar(50) NOT NULL
-
 **Index:**
 1. **UNIQUE (website_id, anonymous_id)
 To strengthen data quality check, one chatbot_user per device per website, and 2 browsers on the same device are treated as 2 different chatbot users.**
 
+
 ### [website_user]
 **Description:** existing website user account
-
 **Column:**
 - website_user_id bigint NOT NULL **PK**
 - website_id bigint NOT NULL **(FK → [website].website_id)**
@@ -170,9 +163,9 @@ To strengthen data quality check, one chatbot_user per device per website, and 2
 - updated_at timestamp NOT NULL
 - updated_by varchar(50) NOT NULL
 
+
 ### [user_id_mapping]
 **Description:** User is allowed to sign into existing website account at any time, even in the middle of a chatbot conversation. This table records when user signs in.
-
 **Column:**
 - chatbot_user_id bigint NOT NULL **(Composite Primary Key; FK → [chatbot_user].chatbot_user_id)**
 - website_user_id bigint NOT NULL **(Composite Primary Key; FK → [website_user].website_user_id)**
@@ -182,13 +175,13 @@ To strengthen data quality check, one chatbot_user per device per website, and 2
 - created_by varchar(50) NOT NULL
 - updated_at timestamp NOT NULL
 - updated_by varchar(50) NOT NULL
-
 **Index:**
 1. **Composite PK (chatbot_user_id, website_user_id, linked_at)
 A user can sign into existing website anytime, even in the middle of chatbot conversation**
 2. **UNIQUE (chatbot_user_id) WHERE unlinked_at IS NULL
 Quality check, ensure a single user can only log into a single unique existing account**
 3.  **Check (unlinked_at >= linked_at)**
+
 
 ### [website]
 **Column:**
@@ -203,6 +196,7 @@ Quality check, ensure a single user can only log into a single unique existing a
 - created_by varchar(50) NOT NULL
 - updated_at timestamp NOT NULL
 - updated_by varchar(50) NOT NULL
+
 
 ### [language]
 **Column:**
