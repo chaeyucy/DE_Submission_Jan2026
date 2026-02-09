@@ -35,6 +35,11 @@ To avoid table exploding, separate entities [chatbot_user], [conversation], [mes
 - status varchar(10) NOT NULL (e.g., active, ended, abandoned, error, etc.)
 - started_at timestamp NOT NULL
 - ended_at timestamp NULL
+- created_at timestamp NOT NULL
+- created_by varchar(50) NOT NULL
+- updated_at timestamp NOT NULL
+- updated_by varchar(50) NOT NULL
+
 
 **Index:**
 1. **INDEX(chatbot_user_id, started_at desc)
@@ -57,6 +62,10 @@ To improve monitoring on a specific website**
 - content_translated nvarchar(MAX) NULL
 - language_id int NOT NULL **(FK → [language].language_id)**
 - response_latency_ms int NULL
+- created_at timestamp NOT NULL
+- created_by varchar(50) NOT NULL
+- updated_at timestamp NOT NULL
+- updated_by varchar(50) NOT NULL
 
 **Index:**
 1. **UNIQUE (conversation_id, message_sequence)
@@ -81,6 +90,10 @@ To improve where clause data retrival and archiving, reduce I/O**
 - intent varchar(100) NULL
 - intent_confidence float NULL
 - entities JSON NULL
+- created_at timestamp NOT NULL
+- created_by varchar(50) NOT NULL
+- updated_at timestamp NOT NULL
+- updated_by varchar(50) NOT NULL
 
 **Index:**
 1. **(nlp_version, processed_at desc) for monitoring**
@@ -94,7 +107,11 @@ To improve where clause data retrival and archiving, reduce I/O**
 - rating_score TINYINT NOT NULL
 - feedback_raw nvarchar(MAX) NULL
 - language_id int NULL
+- feedback_at timestamp NOT NULL
 - created_at timestamp NOT NULL
+- created_by varchar(50) NOT NULL
+- updated_at timestamp NOT NULL
+- updated_by varchar(50) NOT NULL
 
 **Index:**
 1. **UNIQUE(conversation_id) 
@@ -112,6 +129,10 @@ To ensure whenever free-text feedback collected from user, there must be languag
 - translated_at timestamp NOT NULL
 - status varchar(20) NOT NULL (e.g., success, error, etc.)
 - error_code varchar(50) NULL
+- created_at timestamp NOT NULL
+- created_by varchar(50) NOT NULL
+- updated_at timestamp NOT NULL
+- updated_by varchar(50) NOT NULL
 
 ### [chatbot_user]
 **Description:** One record per browser profile on a website. A user starting chatbots on the same website via 2 different browsers within the same device are treated as 2 different chatbot users.
@@ -120,8 +141,13 @@ To ensure whenever free-text feedback collected from user, there must be languag
 - chatbot_user_id bigint NOT NULL **PK**
 - website_id bigint NOT NULL (FK → [website].website_id)
 - anonymous_id varchar(36) NOT NULL
+- ip_address varbinary(32) NOT NULL
 - first_active_at timestamp NOT NULL
 - last_active_at timestamp NOT NULL
+- created_at timestamp NOT NULL
+- created_by varchar(50) NOT NULL
+- updated_at timestamp NOT NULL
+- updated_by varchar(50) NOT NULL
 
 **Index:**
 1. **UNIQUE (website_id, anonymous_id)
@@ -139,6 +165,10 @@ To strengthen data quality check, one chatbot_user per device per website, and 2
 - active_flag boolean NOT NULL
 - active_from timestamp NOT NULL
 - active_end timestamp NOT NULL
+- created_at timestamp NOT NULL
+- created_by varchar(50) NOT NULL
+- updated_at timestamp NOT NULL
+- updated_by varchar(50) NOT NULL
 
 ### [user_id_mapping]
 **Description:** User is allowed to sign into existing website account at any time, even in the middle of a chatbot conversation. This table records when user signs in.
@@ -148,6 +178,10 @@ To strengthen data quality check, one chatbot_user per device per website, and 2
 - website_user_id bigint NOT NULL **(Composite Primary Key; FK → [website_user].website_user_id)**
 - linked_at timestamp NOT NULL **(Composite Primary Key)**
 - unlinked_at timestamp NULL
+- created_at timestamp NOT NULL
+- created_by varchar(50) NOT NULL
+- updated_at timestamp NOT NULL
+- updated_by varchar(50) NOT NULL
 
 **Index:**
 1. **Composite PK (chatbot_user_id, website_user_id, linked_at)
@@ -165,6 +199,10 @@ Quality check, ensure a single user can only log into a single unique existing a
 - active_flag boolean NOT NULL
 - active_from timestamp NOT NULL
 - active_end timestamp NULL
+- created_at timestamp NOT NULL
+- created_by varchar(50) NOT NULL
+- updated_at timestamp NOT NULL
+- updated_by varchar(50) NOT NULL
 
 ### [language]
 **Column:**
@@ -173,3 +211,7 @@ Quality check, ensure a single user can only log into a single unique existing a
 - active_flag boolean NOT NULL
 - active_start timestamp NOT NULL
 - active_end timestamp NULL
+- created_at timestamp NOT NULL
+- created_by varchar(50) NOT NULL
+- updated_at timestamp NOT NULL
+- updated_by varchar(50) NOT NULL
