@@ -101,10 +101,14 @@ Docker will:
 - Password: P@ssw0rd!
 - Database: ChatbotAnalytics
 
-# Run scripts/mock_data.sql to insert sample data
+## Mock data
+- Run scripts/mock_data.sql to insert sample data
 
-# Run scripts/Task2_chatbot_session_DDL.sql to create aggregated session table and other supporting tables
+## Aggregated session table
+- Run scripts/Task2_chatbot_session_DDL.sql to create aggregated session table and other supporting tables
 
-# Run scripts/data_transformation.sql to load aggregated data into [chatbot_session]
+# Data Transformation
+- Run scripts/data_transformation.sql to load aggregated data into [chatbot_session]
 
-# Run sql query in analysis/task3_qx.sql to perform user-behavior analysis
+# User-behavior analysis
+- Run sql query in analysis/task3_qx.sql to perform user-behavior analysis
