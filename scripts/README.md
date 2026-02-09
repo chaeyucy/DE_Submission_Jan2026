@@ -8,7 +8,7 @@
 - Task 1 : DDL for defining staging layer tables with light constraints but basic integrity enforcement.
 
 ## upsert_from_stag_to_gold.sql 
-- Task 1 : Basic upsert logic from staging to gold layer tables with assuming there are metadata, logs (e.g., failure log), partition tables.
+- Task 1 : **Basic upsert logic** from staging to gold layer tables with **assuming there are metadata, logs (e.g., failure log), partition tables**
 
 ## data_transformation.sql      
 - Task 2 : data processing scripts for summarizing into chatbot_session table
