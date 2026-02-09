@@ -1,10 +1,7 @@
 Please access below Confluence document for better display.
-
 Metrics : https://chaeyucy.atlassian.net/wiki/external/YjAzZGYzOGQxYjIzNDgxMWJlZGU2ODVhZTg3NDk0ZWQ
-ERD for chatbot session : https://chaeyucy.atlassian.net/wiki/external/NGI5YzEyY2MyMWVjNDgxY2I2N2M2NDE5ZDFmOGM3Njc
 
 ### Metric 1 — A pair of weighted scores covering latency + error/fallback rate, e.g., WeightedScore = 0.5*LatencyScore + 0.5*QualityGate
-
 ## Rationale: Users typically enjoy instant problem resolution and prioritize speed especially in customer service scenarios. If delay is too long and affects user satisfaction, user may abandon in midstream and choose to reach out to live agent. 
 However, chatbot may immediately reply "I don't understand" or trigger a generic error message, so a fast chatbot with high fallback is still unsuccessful.
 
@@ -19,7 +16,6 @@ However, chatbot may immediately reply "I don't understand" or trigger a generic
 
 
 ### Metrics 2 — Containment Rate (e.g., % conversations with “escalated_to_agent” = 0 and “status” = “ended”)
-
 ## Rational: Tracks the percentage of users who start a conversation and get a resolution solely within the chatbot, without escalating to a live agent or being routed elsewhere. 
 The more self-sufficient your chatbot, the more it reduces operational costs.
 
@@ -35,7 +31,6 @@ If user is not routed to a live agent and chatbot says it's solving issues, but 
 
 
 ### Metrics 3 — User Rating + Retention Rate (e.g., D7 retention)
-
 ## Rationale: Direct feedback shows overall satisfaction of user, but usually only a subset of users leaves feedback. And even lots of users leave feedback only when they tend to complain. So Return user rate proves repeatable and positive user experience.
 
 ## Data Fields needed:
