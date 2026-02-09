@@ -11,4 +11,7 @@
 - Task 1 : Basic upsert logic from staging to gold layer tables with assuming there are metadata, logs (e.g., failure log), partition tables.
 
 ## data_transformation.sql      
-- Task 2: data processing scripts for summarizing into chatbot_session table
+- Task 2 : data processing scripts for summarizing into chatbot_session table
+
+## chatbot_session_DDL
+- Task 2 : DDL for defining aggregated chatbot session table for user behavior analysis
